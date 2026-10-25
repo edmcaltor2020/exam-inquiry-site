@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>문의 관리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root { --ink:#1d3b34; --soft:#4b6459; --paper:#f1f3e6; --sage:#cbd7b6; --honey:#e9b258; --white:#fbfcf6; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:400 1.0625rem/1.6 'Pretendard Variable', Pretendard, system-ui, sans-serif; }
+  main { width:min(44rem, 100% - 2rem); margin:0 auto; padding:2rem 0 4rem; }
+  h1 { font-size:1.5rem; margin:0 0 1rem; }
+  :focus-visible { outline:3px solid var(--ink); outline-offset:3px; border-radius:6px; }
+  input, button { font:inherit; }
+  input[type=password] { width:100%; min-height:3.25rem; padding:.7rem 1rem; border:2px solid var(--ink); border-radius:1rem; background:var(--white); color:var(--ink); }
+  button { min-height:3rem; padding:.5rem 1.2rem; border:2px solid var(--ink); border-radius:999px; background:transparent; color:var(--ink); font-weight:700; cursor:pointer; }
+  button.primary { background:var(--ink); color:var(--paper); }
+  button.on { background:var(--honey); border-color:var(--honey); }
+  .login { display:grid; gap:.8rem; }
+  .err { color:#9a3b2e; font-weight:700; min-height:1.5rem; }
+  .top { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+  .count { font-size:3rem; font-weight:800; line-height:1; }
+  .count small { font-size:1rem; font-weight:400; color:var(--soft); margin-left:.4rem; }
+  .card { background:var(--white); border-radius:1.5rem; padding:1.2rem 1.3rem; margin-top:1rem; display:grid; gap:.5rem; }
+  .card .meta { color:var(--soft); font-size:.9375rem; }
+  .card .exams { font-weight:700; }
+  .card .contact { justify-self:start; border-style:dashed; }
+  .states { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.4rem; }
+  .empty { margin-top:1.5rem; color:var(--soft); }
+</style>
+</head>
+<body>
+<main>
+  <h1>검사 문의 관리</h1>
+
+  <form class="login" id="login">
+    <label for="pw">관리자 비밀번호</label>
+    <input type="password" id="pw" autocomplete="current-password" required>
+    <p class="err" id="err" role="alert"></p>
+    <button class="primary" type="submit">들어가기</button>
+  </form>
+
+  <section id="panel" hidden>
+    <div class="top">
+      <div class="count"><span id="new-count">0</span><small>건의 새 문의</small></div>
+      <button type="button" id="logout">나가기</button>
+    </div>
+    <div id="list"></div>
+    <p class="empty" id="empty" hidden>아직 받은 문의가 없어요.</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  var STATUSES = ['새 문의', '연락함', '완료'];
+  var KEY = 'adminPw';
+  var login = document.getElementById('login');
+  var panel = document.getElementById('panel');
+  var pw = document.getElementById('pw');
+  var err = document.getElementById('err');
+  var list = document.getElementById('list');
+
+  function store(v) { try { v ? sessionStorage.setItem(KEY, v) : sessionStorage.removeItem(KEY); } catch (e) {} }
+  function stored() { try { return sessionStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+
+  function api(method, body) {
+    return fetch('/api/admin', {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': stored() },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, status: r.status, data: d }; });
+    });
+  }
+
+  function fmt(iso) {
+    var d = new Date(iso);
+    return d.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function render(rows) {
+    list.textContent = '';
+    document.getElementById('new-count').textContent = rows.filter(function (r) { return r.status === '새 문의'; }).length;
+    document.getElementById('empty').hidden = rows.length > 0;
+    rows.forEach(function (r) {
+      var card = document.createElement('article');
+      card.className = 'card';
+      var meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = fmt(r.created_at) + ' · ' + r.name;
+      var contact = document.createElement('button');
+      contact.type = 'button';
+      contact.className = 'contact';
+      contact.textContent = r.contact + ' (눌러서 복사)';
+      contact.addEventListener('click', function () {
+        if (navigator.clipboard) navigator.clipboard.writeText(r.contact).then(function () { contact.textContent = '복사했어요'; }, function () {});
+      });
+      card.appendChild(meta);
+      if (r.exams) { var e = document.createElement('div'); e.className = 'exams'; e.textContent = r.exams; card.appendChild(e); }
+      if (r.message) { var m = document.createElement('div'); m.textContent = r.message; card.appendChild(m); }
+      card.appendChild(contact);
+      var states = document.createElement('div');
+      states.className = 'states';
+      STATUSES.forEach(function (s) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = s;
+        if (r.status === s) b.className = 'on';
+        b.addEventListener('click', function () {
+          api('PATCH', { id: r.id, status: s }).then(function (res) { if (res.ok) load(); else alert(res.data.error || '바꾸지 못했어요.'); });
+        });
+        states.appendChild(b);
+      });
+      card.appendChild(states);
+      list.appendChild(card);
+    });
+  }
+
+  function load() {
+    return api('GET').then(function (res) {
+      if (res.status === 401) { store(''); show(false); err.textContent = res.data.error || '비밀번호가 맞지 않아요.'; pw.value = ''; pw.focus(); return; }
+      if (!res.ok) { show(false); err.textContent = res.data.error || '불러오지 못했어요.'; return; }
+      show(true); render(res.data.rows || []);
+    });
+  }
+
+  function show(on) { login.hidden = on; panel.hidden = !on; }
+
+  login.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    err.textContent = '';
+    store(pw.value);
+    pw.value = '';
+    load();
+  });
+  document.getElementById('logout').addEventListener('click', function () { store(''); show(false); });
+
+  if (stored()) load();
+})();
+</script>
+</body>
+</html>
