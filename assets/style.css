@@ -46,7 +46,7 @@ a { color: inherit; }
   position: sticky;
   top: 0;
   z-index: 20;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  background: color-mix(in srgb, var(--paper) 95%, transparent);
   backdrop-filter: blur(10px);
 }
 .top .wrap {

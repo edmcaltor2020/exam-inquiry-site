@@ -35,7 +35,20 @@
     </div>
   </section>
 
-  <!-- PICKER -->
+  <section class="section" id="exams" aria-labelledby="exams-title">
+    <div class="wrap">
+      <h2 id="exams-title">진료 종류를 고르고, 받고 싶은 검사를 눌러 주세요</h2>
+      <p class="sub">여러 개를 골라도 됩니다. 고른 검사는 아래 문의 폼에 자동으로 들어갑니다.</p>
+      <div class="picker">
+        <div class="types" role="tablist" aria-label="진료 종류" id="types"></div>
+        <div class="exam-list" id="exam-list" role="tabpanel"></div>
+        <div>
+          <p class="label" style="font-weight:700;margin-bottom:.5rem">고른 검사</p>
+          <div class="chosen" id="chosen-main" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="section section--deep" aria-labelledby="faq-title">
     <div class="wrap">
@@ -77,8 +90,56 @@
     </div>
   </section>
 
-  <!-- CONTACT -->
+  <section class="section contact" id="contact" aria-labelledby="contact-title">
+    <div class="wrap grid">
+      <div>
+        <h2 id="contact-title">검사에 대해 문의하기</h2>
+        <p class="sub">이름과 연락처, 궁금한 점 한 줄이면 됩니다. 접수된 문의는 병원에서 확인한 뒤 연락드립니다.</p>
+        <p class="sub">증상이나 병력 같은 민감한 건강 정보는 적지 말아 주세요.</p>
+      </div>
+      <div>
+        <form class="form" id="form" novalidate>
+          <div class="field">
+            <span class="label">고른 검사</span>
+            <div class="chosen" id="chosen-form" aria-live="polite"></div>
+            <a class="hint" href="#exams" style="color:inherit">검사 바꾸기</a>
+          </div>
+          <div class="field">
+            <label for="f-name">이름</label>
+            <input type="text" id="f-name" name="name" maxlength="50" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="f-contact">연락처</label>
+            <input type="text" id="f-contact" name="contact" maxlength="100" inputmode="tel" autocomplete="tel" required>
+            <span class="hint">전화번호나 연락받을 수 있는 방법을 적어 주세요.</span>
+          </div>
+          <div class="field">
+            <label for="f-message">문의 내용 (한 줄)</label>
+            <input type="text" id="f-message" name="message" maxlength="200" autocomplete="off">
+          </div>
+          <div class="trap" aria-hidden="true">
+            <label>웹사이트<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+          </div>
+          <label class="consent">
+            <input type="checkbox" id="f-consent" required>
+            <span>(필수) 문의에 답하기 위해 이름, 연락처, 문의 내용, 고른 검사를 수집·이용하는 데 동의합니다. 보관 기간은 병원이 정해 안내합니다.</span>
+          </label>
+          <p class="status" id="status" role="status" aria-live="polite"></p>
+          <button class="btn" type="submit" id="submit">검사 문의 보내기</button>
+        </form>
+        <div class="done" id="done" hidden>
+          <h3>문의가 접수됐어요.</h3>
+          <p>확인 후 연락드릴게요.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
+
+<div class="dock is-hidden" id="dock">
+  <span>고른 검사 <b id="dock-count">0</b>개</span>
+  <a class="btn btn--small" href="#contact">문의하기</a>
+</div>
 
 <footer class="foot">
   <div class="wrap">
